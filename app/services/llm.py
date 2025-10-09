@@ -1,6 +1,9 @@
 import requests
-grok_key = "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"
+from dotenv import load_dotenv 
+import os 
+load_dotenv()
 
+grok_key = os.getenv("GROKKEY")
 def ask_llm(prompt:str,session_id:str):
     url = "https://openrouter.ai/api/v1/chat/completions"
     api_key = grok_key
