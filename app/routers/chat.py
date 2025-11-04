@@ -1,17 +1,66 @@
-from fastapi import APIRouter,HTTPException
+from fastapi import APIRouter,HTTPException,Depends
 from app.services.llm import ask_llm
 from app.services.session import append_chat_interaction
+from app.services.vector_store import add_message_embedding,query_similar_messages
+from app.services.extract_facts import extract_facts
+from app.models.database import UserFact, engine, Session
+from app.utils.embeddings import get_embedding
+from app.utils import user_info_check
+import uuid 
+
+
 
 router = APIRouter() 
 
 @router.post("/")
-def chat(session_id: str, content: str):
+def chat(session_id: str,username:str, message: str):
     try:
-        chat_history = append_chat_interaction(session_id, "user", content)
-        query  = "\n".join([f"{msg['role']}: {msg['content']}" for msg in chat_history])
-        print(query)
-        response = ask_llm(query, session_id)
+        # storing the facts if any
+        facts = extract_facts(message,session_id)
+        print("FACTTTTTTT",facts)
+        with Session(engine) as db:
+            for fact in facts:
+                if fact['fact_content'] is not None and fact['source_message'] is not None:
+                    db.add(UserFact(
+                        user_name=username,
+                        fact_type=fact['fact_type'],
+                        fact_content=fact['fact_content'],
+                        source_message=fact['source_message']
+                    ))
+                    db.commit() 
+        
+        embedding = get_embedding(message) 
+        
+        msg_id = f"{username}-{session_id}-{uuid.uuid4()}"
+        add_message_embedding(message,embedding,username,session_id,msg_id)
+        similar = query_similar_messages(embedding,username,session_id)
+        similar = ". ".join([i[0] for i in similar])
+        similarity_context = f"ADDITIONAL INFORMATION: {similar}"
+        
+        # Past 5 conversations for the user and session
+        chat_history = append_chat_interaction(session_id, "user", message)
+        recent_messages  = "PAST MESSAGES:"+"\n".join([f"{msg['role']}: {msg['content']}" for msg in chat_history]) 
+
+        user_facts = user_info_check.get_user_facts(username)
+        
+        user_information = f"USER DETAILS:{str(user_facts)}"
+
+        final_query = f"{user_information}\n{similarity_context}\n{recent_messages}"
+        print("FINAL QUERY",final_query)
+        response = ask_llm(final_query, session_id)
         chat_history = append_chat_interaction(session_id, "assistant", response)
+
+        
+
         return response
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+
+@router.get("/userfacts")
+def get_user_facts(username: str):
+    with Session(engine) as db:
+
+        facts = user_info_check.get_user_facts(username)
+        return facts  # If SQLModel, you can use .dict()

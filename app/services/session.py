@@ -57,6 +57,7 @@ def append_chat_interaction(session_id: str, role: str, content: str):
         chat_history = json.loads(session.data) if session.data else []
         if not isinstance(chat_history, list):
             chat_history = []
+        chat_history = chat_history[-10:]
         chat_history.append({"role": role, "content": content})
         session.data = json.dumps(chat_history)
         db.add(session)
