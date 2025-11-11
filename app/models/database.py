@@ -25,5 +25,9 @@ class UserFact(SQLModel, table=True):
 
 
 
-engine = create_engine("sqlite:///./mydb.sqlite",echo=True)
+import os
+
+# Use /app/data for persistence in Docker
+db_path = os.getenv("DATABASE_PATH", "/app/data/mydb.sqlite")
+engine = create_engine(f"sqlite:///{db_path}", echo=True)
 SQLModel.metadata.create_all(engine)

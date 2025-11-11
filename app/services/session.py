@@ -31,12 +31,21 @@ def create_or_get_session(username: str, session_id: str = None, data: dict = No
         return session.session_id
 
     
-def get_session_data(session_id:str):
+def get_session_data(session_id: str):
     with DBSession(engine) as db:
-        session = db.query(SessionData).filter(SessionData.session_id == session_id).first()
-        if session:
-            return json.loads(session.data)
-        return None
+        session = db.exec(select(SessionData).where(SessionData.session_id == session_id)).first()
+        if not session:
+            # Return empty chat history for new sessions instead of None
+            return {"messages": []}
+        
+        chat_data = json.loads(session.data) if session.data else []
+        
+        # Ensure it's a list
+        if not isinstance(chat_data, list):
+            chat_data = []
+        
+        # Return in the expected format
+        return {"messages": chat_data}
 
 
 def get_sessions_for_user(username: str):
