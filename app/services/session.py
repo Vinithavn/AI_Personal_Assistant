@@ -54,7 +54,7 @@ def get_sessions_for_user(username: str):
         if not user:
             return []
         sessions = db.exec(select(SessionData).where(SessionData.user_id == user.id)).all()
-        return [session.session_id for session in sessions]
+        return [{"session_id": session.session_id, "session_name": session.session_name or "New Chat"} for session in sessions]
 
 
 
@@ -73,3 +73,26 @@ def append_chat_interaction(session_id: str, role: str, content: str):
         db.commit()
         db.refresh(session)
         return chat_history
+
+def is_first_message(session_id: str) -> bool:
+    """Check if this is the first user message in the session"""
+    with DBSession(engine) as db:
+        session = db.exec(select(SessionData).where(SessionData.session_id == session_id)).first()
+        if not session:
+            return True
+        chat_history = json.loads(session.data) if session.data else []
+        if not isinstance(chat_history, list):
+            return True
+        # Check if there are any user messages
+        user_messages = [msg for msg in chat_history if msg.get('role') == 'user']
+        return len(user_messages) == 0
+
+def update_session_name(session_id: str, name: str):
+    """Update the session name"""
+    with DBSession(engine) as db:
+        session = db.exec(select(SessionData).where(SessionData.session_id == session_id)).first()
+        if session:
+            session.session_name = name
+            db.add(session)
+            db.commit()
+            db.refresh(session)

@@ -15,11 +15,11 @@ def session_data(session_id: str):
 
 @router.get("/{username}")
 def sessions_for_user(username: str):
-    session_ids = get_sessions_for_user(username)
+    sessions = get_sessions_for_user(username)
     # Return empty list instead of 404 when user has no sessions
-    if not session_ids:
-        return {"username": username, "session_ids": []}
-    return {"username": username, "session_ids": session_ids}
+    if not sessions:
+        return {"username": username, "sessions": []}
+    return {"username": username, "sessions": sessions}
 
 
 @router.post("/")

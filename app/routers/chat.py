@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import PlainTextResponse
-from app.services.llm import ask_llm
-from app.services.session import append_chat_interaction
+from app.services.llm import ask_llm, generate_session_name
+from app.services.session import append_chat_interaction, update_session_name, is_first_message
 from app.services.vector_store import add_message_embedding, query_similar_messages
 from app.services.extract_facts import extract_facts
 from app.models.database import UserFact, engine, Session
@@ -21,6 +21,16 @@ def chat(body: ChatMessage):
     message = body.message
     
     try:
+        # Check if this is the first message and generate session name
+        if is_first_message(session_id):
+            try:
+                session_name = generate_session_name(message)
+                update_session_name(session_id, session_name)
+                print(f"Generated session name: {session_name}")
+            except Exception as e:
+                print(f"Failed to generate session name: {e}")
+                # Continue even if name generation fails
+        
         # storing the facts if any
         facts = extract_facts(message, session_id)
         print("FACTTTTTTT", facts)

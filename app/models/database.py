@@ -13,6 +13,7 @@ class SessionData(SQLModel,table=True):
     session_id: str
     user_id:int
     data:Optional[str] = Field(default="{}")
+    session_name:Optional[str] = Field(default="New Chat")
 
 
 class UserFact(SQLModel, table=True):
