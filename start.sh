@@ -4,7 +4,7 @@
 
 set -e
 
-echo "🚀 Starting AI Personal Assistant..."
+echo "🚀 Starting AI Personal Assistant (Development Mode)..."
 echo ""
 
 # Check if Docker is running
@@ -14,21 +14,23 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null 2>&1; then
     echo "❌ Error: docker-compose is not installed. Please install it and try again."
     exit 1
 fi
 
+# Use 'docker compose' if available, otherwise 'docker-compose'
+if docker compose version &> /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
+    DOCKER_COMPOSE="docker-compose"
+fi
+
 # Parse arguments
-MODE="production"
 DETACHED=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --dev)
-            MODE="development"
-            shift
-            ;;
         -d|--detached)
             DETACHED="-d"
             shift
@@ -37,15 +39,12 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: ./start.sh [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --dev          Run in development mode with hot-reload"
             echo "  -d, --detached Run in background (detached mode)"
             echo "  -h, --help     Show this help message"
             echo ""
             echo "Examples:"
-            echo "  ./start.sh                    # Start in production mode"
-            echo "  ./start.sh --dev              # Start in development mode"
-            echo "  ./start.sh -d                 # Start in background"
-            echo "  ./start.sh --dev -d           # Start in dev mode, background"
+            echo "  ./start.sh           # Start with logs in foreground"
+            echo "  ./start.sh -d        # Start in background"
             exit 0
             ;;
         *)
@@ -56,29 +55,21 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Set compose file based on mode
-if [ "$MODE" = "development" ]; then
-    COMPOSE_FILE="docker-compose.dev.yml"
-    echo "📦 Mode: Development (with hot-reload)"
-else
-    COMPOSE_FILE="docker-compose.simple.yml"
-    echo "📦 Mode: Production"
-fi
-
+echo "📦 Mode: Development (with hot-reload)"
 echo "🔨 Building and starting services..."
 echo ""
 
 # Build and start services
 if [ -n "$DETACHED" ]; then
-    docker-compose -f $COMPOSE_FILE up --build $DETACHED
+    $DOCKER_COMPOSE up --build $DETACHED
     echo ""
     echo "✅ Services started in background!"
     echo ""
-    echo "📊 Check status: docker-compose ps"
-    echo "📋 View logs: docker-compose logs -f"
-    echo "🛑 Stop services: docker-compose down"
+    echo "📊 Check status: $DOCKER_COMPOSE ps"
+    echo "📋 View logs: $DOCKER_COMPOSE logs -f"
+    echo "🛑 Stop services: $DOCKER_COMPOSE down"
 else
-    docker-compose -f $COMPOSE_FILE up --build
+    $DOCKER_COMPOSE up --build
 fi
 
 echo ""

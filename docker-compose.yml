@@ -1,12 +1,12 @@
 version: '3.9'
 
 services:
-  # Backend API Service (FastAPI)
+  # Backend API Service (FastAPI) 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ai-assistant-backend
+    container_name: ai-assistant-backend-dev
     ports:
       - "8000:8000"
     environment:
@@ -19,36 +19,28 @@ services:
     networks:
       - ai-assistant-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/docs || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  # Frontend Service (Next.js)
+  # Frontend Service (Next.js) 
   frontend:
-    build:
-      context: ./personal-ai
-      dockerfile: Dockerfile
-    container_name: ai-assistant-frontend
+    image: node:20-alpine
+    container_name: ai-assistant-frontend-dev
+    working_dir: /app
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+    volumes:
+      - ./personal-ai:/app
+      - /app/node_modules
+      - /app/.next
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - ai-assistant-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+    command: sh -c "npm install && npm run dev"
 
 networks:
   ai-assistant-network:
@@ -56,4 +48,3 @@ networks:
 
 volumes:
   backend-data:
-    

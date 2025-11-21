@@ -7,7 +7,7 @@ import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { useAuth } from '@/hooks/useAuth';
 import { getSessionData, sendChatMessage, ApiError } from '@/lib/api';
-import { Message } from '@/lib/types';
+import { Message, ApiMessage } from '@/lib/types';
 import { useToast } from '@/contexts/ToastContext';
 
 function ChatPageContent() {
@@ -34,7 +34,7 @@ function ChatPageContent() {
         const chatHistory = await getSessionData(sessionId);
         
         // Convert API messages to Message format
-        const formattedMessages: Message[] = chatHistory.messages.map((msg, index) => ({
+        const formattedMessages: Message[] = chatHistory.messages.map((msg: ApiMessage, index: number) => ({
           id: `${sessionId}-${index}`,
           role: msg.role as 'user' | 'assistant',
           content: msg.content,

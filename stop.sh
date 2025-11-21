@@ -13,6 +13,13 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# Use 'docker compose' if available, otherwise 'docker-compose'
+if docker compose version &> /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
+    DOCKER_COMPOSE="docker-compose"
+fi
+
 # Parse arguments
 REMOVE_VOLUMES=""
 
@@ -45,12 +52,10 @@ done
 # Stop services
 if [ -n "$REMOVE_VOLUMES" ]; then
     echo "⚠️  Stopping services and removing volumes (data will be deleted)..."
-    docker-compose down $REMOVE_VOLUMES
-    docker-compose -f docker-compose.dev.yml down $REMOVE_VOLUMES 2>/dev/null || true
+    $DOCKER_COMPOSE down $REMOVE_VOLUMES
 else
     echo "Stopping services (data will be preserved)..."
-    docker-compose down
-    docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
+    $DOCKER_COMPOSE down
 fi
 
 echo ""

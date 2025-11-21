@@ -13,21 +13,28 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# Use 'docker compose' if available, otherwise 'docker-compose'
+if docker compose version &> /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
+    DOCKER_COMPOSE="docker-compose"
+fi
+
 # Stop services
 echo "🛑 Stopping services..."
-docker-compose -f docker-compose.simple.yml down 2>/dev/null || true
-docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
+$DOCKER_COMPOSE down 2>/dev/null || true
 
 echo ""
 echo "🔨 Rebuilding and starting services..."
 echo ""
 
 # Rebuild and start
-docker-compose -f docker-compose.simple.yml up --build -d
+$DOCKER_COMPOSE up --build -d
 
 echo ""
 echo "✅ Services restarted!"
 echo ""
-echo "📊 View logs: docker-compose -f docker-compose.simple.yml logs -f"
+echo "📊 View logs: $DOCKER_COMPOSE logs -f"
 echo "🌐 Frontend: http://localhost:3000"
 echo "🔧 Backend: http://localhost:8000"
+echo "📚 API Docs: http://localhost:8000/docs"
