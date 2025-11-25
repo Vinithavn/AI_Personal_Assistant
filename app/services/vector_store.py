@@ -20,5 +20,9 @@ def query_similar_messages(query_embedding:list[float],username:str,session_id:s
         n_results=n_results,
         where={"user_session":f"{username}:{session_id}"}
     )
-    return results["documents"]
+    # ChromaDB returns documents as a list of lists, flatten it
+    documents = results.get("documents", [[]])
+    if documents and len(documents) > 0:
+        return [(doc,) for doc in documents[0]]  # Return as list of tuples for compatibility
+    return []
 

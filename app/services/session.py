@@ -96,3 +96,14 @@ def update_session_name(session_id: str, name: str):
             db.add(session)
             db.commit()
             db.refresh(session)
+
+def get_chat_history(session_id: str) -> list:
+    """Get chat history for a session without adding new messages"""
+    with DBSession(engine) as db:
+        session = db.exec(select(SessionData).where(SessionData.session_id == session_id)).first()
+        if not session:
+            return []
+        chat_history = json.loads(session.data) if session.data else []
+        if not isinstance(chat_history, list):
+            return []
+        return chat_history
