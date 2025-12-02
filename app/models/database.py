@@ -24,6 +24,17 @@ class UserFact(SQLModel, table=True):
     source_message: str     # e.g., chat/interaction
     created_at: datetime = Field(default_factory=datetime.now)
 
+    def to_dict(self):
+        """Convert UserFact instance to dictionary"""
+        return {
+            'id': self.id,
+            'user_name': self.user_name,
+            'fact_type': self.fact_type,
+            'fact_content': self.fact_content,
+            'source_message': self.source_message,
+            'created_at': self.created_at
+        }
+
 
 
 import os

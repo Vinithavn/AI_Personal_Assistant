@@ -3,7 +3,7 @@ Given the following user message:
 \"\"\"{user_message}\"\"\"
 
 Identify any user facts, preferences, habits, or personal details expressed. For each fact, return:
-- fact_type (preference, habit, demographic, expertise, hobby, etc.)
+- fact_type (name, age,preference, habit, location, expertise, hobby, etc.)
 - fact_content (the specific information or value)
 - source_message (the relevant span from the message)
 
