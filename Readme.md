@@ -2,7 +2,7 @@
 
 A smart conversational AI that remembers your preferences, detects contradictions, and maintains context across conversations. Built with FastAPI, Next.js, and ChromaDB for intelligent memory management.
 
-## ✨ Features
+## Features
 
 - **Intelligent Memory**: Automatically extracts and stores facts from conversations
 - **Conflict Detection**: Alerts when new messages contradict previous preferences
