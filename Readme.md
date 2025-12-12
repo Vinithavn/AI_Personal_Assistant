@@ -70,4 +70,4 @@ cd AI_Personal_Assistant
 
 
 ## Example
-![Alt text]()
+![Alt text](https://github.com/Vinithavn/AI_Personal_Assistant/blob/main/images/Screenshot%202025-12-12%20at%201.03.54%E2%80%AFPM.png)
