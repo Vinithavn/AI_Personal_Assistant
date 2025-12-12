@@ -1,6 +1,3 @@
-#!/bin/bash
-
-# AI Personal Assistant - Docker Startup Script
 
 set -e
 

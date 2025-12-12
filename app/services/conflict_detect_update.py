@@ -14,13 +14,6 @@ class ConflictResult:
 
 
 def parse_conflict_response(response: str) -> ConflictResult:
-    """
-    Parse LLM response to extract conflict status and conflicting facts.
-    
-    Expected response format:
-    - If conflict: "yes\n- fact1\n- fact2"
-    - If no conflict: "no\n[]" or "no"
-    """
     lines = response.strip().split('\n')
     has_conflict = lines[0].lower().strip() == 'yes'
     
@@ -44,17 +37,6 @@ def conflict_check(
     old_facts: str, 
     session_id: str
 ) -> ConflictResult:
-    """
-    Check if the user's current message conflicts with their previous preferences/history.
-    
-    Args:
-        new_facts: New information from user
-        old_facts: Previously stored facts
-        session_id: User session identifier
-    
-    Returns:
-        ConflictResult with conflict status and conflicting facts
-    """
     
     conflict_prompt_text = conflict_prompt.facts_prompt.format(
         new_facts=new_facts,
@@ -71,23 +53,8 @@ def update_memory(
     username: str,
     extracted_facts: List[Dict],
     conflict_result: ConflictResult,
-    update_strategy: str = "merge"
+    update_strategy: str = "replace"
 ) -> Dict[str, any]:
-    """
-    Update SQLite based on conflict detection results.
-    
-    Args:
-        username: Username to update facts for
-        extracted_facts: List of fact dictionaries with 'fact_content', 'fact_type', 'source_message'
-        conflict_result: Result from conflict_check()
-        update_strategy: 
-            - "merge": Keep both old and new (default)
-            - "replace": Replace conflicting facts with new ones
-            - "manual_review": Flag for manual review, don't auto-update
-    
-    Returns:
-        Dict with update status and details
-    """
     
     if not conflict_result.has_conflict:
         # No conflict: straightforward addition
@@ -101,12 +68,7 @@ def update_memory(
             extracted_facts, 
             conflict_result.conflicting_facts
         )
-    elif update_strategy == "merge":
-        return _merge_facts(
-            username, 
-            extracted_facts, 
-            conflict_result.conflicting_facts
-        )
+        
     else:
         raise ValueError(f"Unknown update strategy: {update_strategy}")
 
@@ -194,46 +156,6 @@ def _replace_conflicting_facts(
         }
 
 
-def _merge_facts(
-    username: str,
-    extracted_facts: List[Dict],
-    conflicting_facts: List[str]
-) -> Dict[str, any]:
-    """
-    Keep both old and new facts but keep track of which ones conflict.
-    Useful when preferences evolve over time.
-    """
-    try:
-        with Session(engine) as db:
-            # Add new facts alongside old ones (no deletion)
-            added_facts = []
-            for fact in extracted_facts:
-                if fact.get('fact_content') is not None and fact.get('source_message') is not None:
-                    user_fact = UserFact(
-                        user_name=username,
-                        fact_type=fact.get('fact_type'),
-                        fact_content=fact.get('fact_content'),
-                        source_message=fact.get('source_message')
-                    )
-                    db.add(user_fact)
-                    added_facts.append(user_fact)
-            
-            db.commit()
-        
-        return {
-            "status": "success",
-            "action": "merged",
-            "new_facts_count": len(added_facts),
-            "conflicting_facts_kept": conflicting_facts,
-            "message": f"Added {len(added_facts)} new fact(s); kept conflicting facts for context"
-        }
-    except Exception as e:
-        return {
-            "function":"merging",
-            "status": "error",
-            "action": "failed",
-            "message": str(e)
-        }
 
 
 
